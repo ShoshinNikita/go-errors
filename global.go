@@ -21,14 +21,6 @@ func Wrapf(err error, format string, a ...interface{}) error {
 	return addOrCreate(err, fmt.Errorf(format, a...), 0)
 }
 
-func WrapWithSkip(skip int, err error, msg string) error {
-	return addOrCreate(err, errors.New(msg), skip)
-}
-
-func WrapfWithSkip(skip int, err error, format string, a ...interface{}) error {
-	return addOrCreate(err, fmt.Errorf(format, a...), skip)
-}
-
 func Is(err, target error) bool {
 	return errors.Is(err, target)
 }
