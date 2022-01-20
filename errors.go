@@ -20,7 +20,7 @@ func addOrCreate(err, new error, additionalSkips int) *Error {
 	// Skip addOrCreate and New/Errorf/Wrap/etc.
 	skip := 2 + additionalSkips
 
-	stack := GetStackTrace(skip)
+	stack := getStackTrace(skip)
 
 	if err == nil {
 		return &Error{

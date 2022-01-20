@@ -1,6 +1,7 @@
 package errors
 
 import (
+	"errors"
 	"runtime"
 	"strconv"
 	"strings"
@@ -31,7 +32,7 @@ func (f Frame) String() string {
 }
 
 // TODO: comment about "runtime"
-func GetStackTrace(skip int) StackTrace {
+func getStackTrace(skip int) StackTrace {
 	const depth = 32
 
 	// Skip runtime.Callers and GetStackTrace
@@ -60,4 +61,12 @@ func GetStackTrace(skip int) StackTrace {
 		})
 	}
 	return res
+}
+
+func ExtractStackTrace(err error) StackTrace {
+	var e *Error
+	if errors.As(err, &e) {
+		return e.StackTrace()
+	}
+	return nil
 }
