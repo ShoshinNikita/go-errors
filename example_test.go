@@ -3,7 +3,7 @@ package errors_test
 import (
 	"fmt"
 
-	"github.com/ShoshinNikita/errors"
+	"github.com/ShoshinNikita/go-errors"
 )
 
 var ErrGlobal = errors.New("global error")
