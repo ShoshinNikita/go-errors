@@ -86,7 +86,7 @@ func (e *Error) As(target interface{}) bool {
 
 func (e *Error) Format(f fmt.State, verb rune) {
 	f.Write([]byte(e.Error()))
-	if verb == 'v' && f.Flag('+') {
+	if verb == 'v' && (f.Flag('+') || f.Flag('#')) {
 		f.Write([]byte("\n"))
 		f.Write([]byte(e.stack.String()))
 	}
