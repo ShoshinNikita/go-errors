@@ -5,6 +5,9 @@ import (
 	"fmt"
 )
 
+// ErrNilWrap is returned when Wrap/Wrapf is called with nil error
+var ErrNilWrap = errors.New("<nil>")
+
 func New(text string) error {
 	return addOrCreate(nil, errors.New(text), 0)
 }
@@ -14,10 +17,16 @@ func Errorf(format string, a ...interface{}) error {
 }
 
 func Wrap(err error, msg string) error {
+	if err == nil {
+		err = ErrNilWrap
+	}
 	return addOrCreate(err, errors.New(msg), 0)
 }
 
 func Wrapf(err error, format string, a ...interface{}) error {
+	if err == nil {
+		err = ErrNilWrap
+	}
 	return addOrCreate(err, fmt.Errorf(format, a...), 0)
 }
 
