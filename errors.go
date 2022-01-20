@@ -16,9 +16,9 @@ var (
 )
 
 // TODO: comment
-func addOrCreate(err, new error, additionalSkips int) *Error {
+func addOrCreate(err, new error) *Error {
 	// Skip addOrCreate and New/Errorf/Wrap/etc.
-	skip := 2 + additionalSkips
+	const skip = 2
 
 	stack := getStackTrace(skip)
 
