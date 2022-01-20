@@ -28,3 +28,15 @@ func WrapWithSkip(skip int, err error, msg string) error {
 func WrapfWithSkip(skip int, err error, format string, a ...interface{}) error {
 	return addOrCreate(err, fmt.Errorf(format, a...), skip)
 }
+
+func Is(err, target error) bool {
+	return errors.Is(err, target)
+}
+
+func As(err error, target interface{}) bool {
+	return errors.As(err, target)
+}
+
+func Unwrap(err error) error {
+	return errors.Unwrap(err)
+}
