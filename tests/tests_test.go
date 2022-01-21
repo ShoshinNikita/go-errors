@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/ShoshinNikita/go-errors"
-
+	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,19 +26,21 @@ func TestStackTraceRestore(t *testing.T) {
 	require := require.New(t)
 
 	a := func() error { return errors.Errorf("some %q", "error") }
-	b := func() error { return errors.Wrapf(a(), "%s", "b") }
-	c := func() error { return fmt.Errorf("c: %w", b()) }
-	d := func() error { return errors.Wrap(c(), "d") } // Stack trace should be restored
-	err := d()
+	b := func() error { return pkgerrors.Wrap(a(), "b") }
+	c := func() error { return errors.Wrapf(b(), "%s", "c") }
+	d := func() error { return fmt.Errorf("d: %w", c()) }
+	e := func() error { return errors.Wrap(d(), "e") } // Stack trace should be restored
+	err := e()
 
-	require.EqualError(err, `d: c: b: some "error"`)
+	require.EqualError(err, `e: d: c: b: some "error"`)
 	trace := errors.ExtractStackTrace(err)
 	checkStackTraces(t, trace,
 		"TestStackTraceRestore.func1", // wrap in a
 		"TestStackTraceRestore.func2", // wrap in b
 		"TestStackTraceRestore.func3", // wrap in c
 		"TestStackTraceRestore.func4", // wrap in d
-		"TestStackTraceRestore",       // call to d
+		"TestStackTraceRestore.func5", // wrap in e
+		"TestStackTraceRestore",       // call to e
 	)
 }
 
