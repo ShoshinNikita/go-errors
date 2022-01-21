@@ -1,19 +1,20 @@
-package errors_test
+package tests
 
 import (
 	"database/sql"
 	stderrors "errors"
 	"fmt"
 	"os"
-	"regexp"
 	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/ShoshinNikita/go-errors"
+
+	"github.com/stretchr/testify/require"
 )
 
-const modulePath = "github.com/ShoshinNikita/go-errors_test"
+const modulePath = "github.com/ShoshinNikita/go-errors/tests"
 
 var (
 	ErrGlobal = errors.New("global error")
@@ -22,7 +23,7 @@ var (
 func TestStackTraceRestore(t *testing.T) {
 	t.Parallel()
 
-	require := NewRequire(t)
+	require := require.New(t)
 
 	a := func() error { return errors.Errorf("some %q", "error") }
 	b := func() error { return errors.Wrapf(a(), "%s", "b") }
@@ -44,7 +45,7 @@ func TestStackTraceRestore(t *testing.T) {
 func TestOverwriteGlobalErrorStackTrace(t *testing.T) {
 	t.Parallel()
 
-	require := NewRequire(t)
+	require := require.New(t)
 
 	a := func() error { return errors.Wrap(ErrGlobal, "a") }
 	b := func() error { return errors.Wrap(a(), "b") }
@@ -62,7 +63,7 @@ func TestOverwriteGlobalErrorStackTrace(t *testing.T) {
 func TestWrapNil(t *testing.T) {
 	t.Parallel()
 
-	require := NewRequire(t)
+	require := require.New(t)
 
 	a := func() error { return nil }
 	b := func() error { return errors.Wrap(a(), "b") }
@@ -120,7 +121,7 @@ func checkStackTraces(t *testing.T, trace errors.StackTrace, expectedFuncs ...st
 func TestIs(t *testing.T) {
 	t.Parallel()
 
-	require := NewRequire(t)
+	require := require.New(t)
 
 	err := errors.Wrap(sql.ErrNoRows, "wrap")
 	err = errors.Wrapf(err, "wrap%s", "f")
@@ -137,7 +138,7 @@ func TestIs(t *testing.T) {
 func TestAs(t *testing.T) {
 	t.Parallel()
 
-	require := NewRequire(t)
+	require := require.New(t)
 
 	err := errors.Wrap(&MyError{}, "wrap")
 	err = errors.Wrapf(err, "wrap%s", "f")
@@ -168,7 +169,7 @@ func (*MyError) Error() string {
 func TestFormat(t *testing.T) {
 	t.Parallel()
 
-	require := NewRequire(t)
+	require := require.New(t)
 
 	const errorMsg = "func4: func3: func2: func1"
 
@@ -183,57 +184,17 @@ func TestFormat(t *testing.T) {
 		fullErrorPattern += modulePath + "\\." + f + "\n\t" + filepath + ":\\d+" + "\n"
 	}
 	fullErrorPattern += "testing.tRunner" + "\n\t" + ".*/src/testing/testing.go:\\d+$"
-	fullErrorRegexp := regexp.MustCompile(fullErrorPattern)
 
 	err := func4()
-	require.EqualString("func4: func3: func2: func1", fmt.Sprint(err))
-	require.EqualString("func4: func3: func2: func1", fmt.Sprintf("%s", err))
-	require.EqualString("func4: func3: func2: func1", fmt.Sprintf("%v", err))
-	require.EqualString("func4: func3: func2: func1", fmt.Sprintf("%q", err))
-	require.True(fullErrorRegexp.MatchString(fmt.Sprintf("%+v", err)))
-	require.True(fullErrorRegexp.MatchString(fmt.Sprintf("%#v", err)))
+	require.Equal("func4: func3: func2: func1", fmt.Sprint(err))
+	require.Equal("func4: func3: func2: func1", fmt.Sprintf("%s", err))
+	require.Equal("func4: func3: func2: func1", fmt.Sprintf("%v", err))
+	require.Equal("func4: func3: func2: func1", fmt.Sprintf("%q", err))
+	require.Regexp(fullErrorPattern, fmt.Sprintf("%+v", err))
+	require.Regexp(fullErrorPattern, fmt.Sprintf("%#v", err))
 }
 
 func func1() error { return errors.New("func1") }
 func func2() error { return errors.Wrap(func1(), "func2") }
 func func3() error { return errors.Wrap(func2(), "func3") }
 func func4() error { return errors.Wrap(func3(), "func4") }
-
-type Require struct {
-	*testing.T
-}
-
-func NewRequire(t *testing.T) *Require {
-	return &Require{t}
-}
-
-func (r *Require) EqualError(err error, expected string) {
-	r.Helper()
-	if err == nil {
-		r.Fatalf("expected error %q, got nil error", expected)
-	}
-	if errMsg := err.Error(); errMsg != expected {
-		r.Fatalf("expected error %q, got %q", expected, errMsg)
-	}
-}
-
-func (r *Require) EqualString(expected, got string) {
-	r.Helper()
-	if expected != got {
-		r.Fatalf("expected string %q, got %q", expected, got)
-	}
-}
-
-func (r *Require) True(b bool) {
-	r.Helper()
-	if !b {
-		r.Fatal("expected true, got false")
-	}
-}
-
-func (r *Require) False(b bool) {
-	r.Helper()
-	if b {
-		r.Fatal("expected false, got true")
-	}
-}
