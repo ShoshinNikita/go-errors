@@ -22,13 +22,13 @@ func (s StackTrace) String() string {
 }
 
 type Frame struct {
-	Funcion string
+	Function string
 	File    string
 	Line    int
 }
 
 func (f Frame) String() string {
-	return f.Funcion + "\n\t" + f.File + ":" + strconv.Itoa(f.Line)
+	return f.Function + "\n\t" + f.File + ":" + strconv.Itoa(f.Line)
 }
 
 func ExtractStackTrace(err error) StackTrace {
@@ -65,7 +65,7 @@ func (c programCounters) toStackTrace() StackTrace {
 		}
 
 		res = append(res, Frame{
-			Funcion: f.Function,
+			Function: f.Function,
 			File:    f.File,
 			Line:    f.Line,
 		})

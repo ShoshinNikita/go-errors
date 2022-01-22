@@ -110,7 +110,7 @@ func checkStackTraces(t *testing.T, trace errors.StackTrace, expectedFuncs ...st
 
 	funcs := make([]string, 0, len(trace))
 	for _, frame := range trace {
-		funcs = append(funcs, frame.Funcion)
+		funcs = append(funcs, frame.Function)
 	}
 
 	for i := range funcs {
