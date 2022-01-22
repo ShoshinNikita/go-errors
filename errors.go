@@ -7,7 +7,7 @@ import (
 
 type Error struct {
 	errors []error
-	stack  StackTrace
+	pcs    []programCounters
 }
 
 var (
@@ -20,32 +20,30 @@ func addOrCreate(err, new error) *Error {
 	// Skip addOrCreate and New/Errorf/Wrap/etc.
 	const skip = 2
 
-	stack := getStackTrace(skip)
+	pc := getProgramCounters(skip)
 
 	if err == nil {
 		return &Error{
 			errors: []error{new},
-			stack:  stack,
+			pcs:    []programCounters{pc},
 		}
 	}
 
 	// Don't use errors.As to not lost any errors
 	if e, ok := err.(*Error); ok {
 		e.errors = append(e.errors, new)
-		if len(e.stack) < len(stack) {
-			e.stack = stack
-		}
+		e.pcs = append(e.pcs, pc)
 		return e
 	}
 
-	// Try to extract the deepest stack
-	var e *Error
-	if errors.As(err, &e) && len(e.stack) >= len(stack) {
-		stack = e.stack
+	// Try to extract program counters
+	pcs := []programCounters{pc}
+	if e := (*Error)(nil); errors.As(err, &e) {
+		pcs = append(pcs, e.pcs...)
 	}
 	return &Error{
 		errors: []error{err, new},
-		stack:  stack,
+		pcs:    pcs,
 	}
 }
 
@@ -61,9 +59,14 @@ func (e *Error) Error() string {
 }
 
 func (e *Error) StackTrace() StackTrace {
-	res := make(StackTrace, len(e.stack))
-	copy(res, e.stack)
-	return res
+	var deepestStackTrace StackTrace
+	for i := range e.pcs {
+		s := e.pcs[i].toStackTrace()
+		if len(s) > len(deepestStackTrace) {
+			deepestStackTrace = s
+		}
+	}
+	return deepestStackTrace
 }
 
 func (e *Error) Is(target error) bool {
@@ -88,6 +91,6 @@ func (e *Error) Format(f fmt.State, verb rune) {
 	f.Write([]byte(e.Error()))
 	if verb == 'v' && (f.Flag('+') || f.Flag('#')) {
 		f.Write([]byte("\n"))
-		f.Write([]byte(e.stack.String()))
+		f.Write([]byte(e.StackTrace().String()))
 	}
 }
