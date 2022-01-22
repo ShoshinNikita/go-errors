@@ -1,6 +1,6 @@
-# errors
+# github.com/ShoshinNikita/go-errors
 
-`github.com/ShoshinNikita/go-errors` is like `github.com/pkg/errors` but with major improvements:
+`github.com/ShoshinNikita/go-errors` is like `github.com/pkg/errors` but with some improvements:
 
 - it prints only the deepest stack trace
 - it filters `runtime` calls in stack traces
@@ -131,4 +131,3 @@ Format/go-errors                 53.0 ± 0%
 Format/pkg_errors                 155 ± 0%
 Format/fmt                       0.00     
 ```
-
