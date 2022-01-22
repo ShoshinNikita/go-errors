@@ -31,20 +31,30 @@ func (f Frame) String() string {
 	return f.Funcion + "\n\t" + f.File + ":" + strconv.Itoa(f.Line)
 }
 
-// TODO: comment about "runtime"
-func getStackTrace(skip int) StackTrace {
-	const depth = 32
+func ExtractStackTrace(err error) StackTrace {
+	var e *Error
+	if errors.As(err, &e) {
+		return e.StackTrace()
+	}
+	return nil
+}
 
-	// Skip runtime.Callers and GetStackTrace
+type programCounters []uintptr
+
+func getProgramCounters(skip int) programCounters {
+	// Skip runtime.Callers and getProgramCounters
 	skip += 2
 
-	pc := make([]uintptr, depth)
-	n := runtime.Callers(skip, pc)
-	pc = pc[:n]
+	var pc [32]uintptr
+	n := runtime.Callers(skip, pc[:])
+	return pc[:n]
+}
 
-	res := make([]Frame, 0, len(pc))
+// toStackTrace converts program counters to a list of frames and filters all runtime call
+func (c programCounters) toStackTrace() StackTrace {
+	res := make([]Frame, 0, len(c))
 
-	frames := runtime.CallersFrames(pc)
+	frames := runtime.CallersFrames(c)
 	for {
 		f, ok := frames.Next()
 		if !ok {
@@ -61,12 +71,4 @@ func getStackTrace(skip int) StackTrace {
 		})
 	}
 	return res
-}
-
-func ExtractStackTrace(err error) StackTrace {
-	var e *Error
-	if errors.As(err, &e) {
-		return e.StackTrace()
-	}
-	return nil
 }

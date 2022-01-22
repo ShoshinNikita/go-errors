@@ -7,7 +7,8 @@ import (
 
 type Error struct {
 	errors []error
-	stack  StackTrace
+	// pcs is a list of program counters with equal and maximum size. This state is maintained by addNewPCs
+	pcs []programCounters
 }
 
 var (
@@ -20,32 +21,30 @@ func addOrCreate(err, new error) *Error {
 	// Skip addOrCreate and New/Errorf/Wrap/etc.
 	const skip = 2
 
-	stack := getStackTrace(skip)
+	pc := getProgramCounters(skip)
 
 	if err == nil {
 		return &Error{
 			errors: []error{new},
-			stack:  stack,
+			pcs:    []programCounters{pc},
 		}
 	}
 
 	// Don't use errors.As to not lost any errors
 	if e, ok := err.(*Error); ok {
 		e.errors = append(e.errors, new)
-		if len(e.stack) < len(stack) {
-			e.stack = stack
-		}
+		addNewPCs(&e.pcs, pc)
 		return e
 	}
 
-	// Try to extract the deepest stack
-	var e *Error
-	if errors.As(err, &e) && len(e.stack) >= len(stack) {
-		stack = e.stack
+	// Try to extract program counters
+	pcs := []programCounters{pc}
+	if e := (*Error)(nil); errors.As(err, &e) {
+		addNewPCs(&pcs, e.pcs...)
 	}
 	return &Error{
 		errors: []error{err, new},
-		stack:  stack,
+		pcs:    pcs,
 	}
 }
 
@@ -60,10 +59,50 @@ func (e *Error) Error() string {
 	return res
 }
 
+// addNewPCs adds new program counters reusing pcs. After the call, pcs will contain elements
+// with the maximum number of program counters, and all elements will have the same size
+func addNewPCs(pcs *[]programCounters, newPCs ...programCounters) {
+	if len(*pcs) == 0 {
+		l := len(newPCs)
+		if l == 0 {
+			// Just in case
+			return
+		}
+
+		*pcs = append(*pcs, newPCs[0])
+		newPCs = newPCs[1:]
+		if l == 1 {
+			// Nothing to filter
+			return
+		}
+	}
+
+	maxDepth := len((*pcs)[0])
+	for _, pc := range newPCs {
+		if l := len(pc); l > maxDepth {
+			maxDepth = l
+		}
+	}
+	if maxDepth > len((*pcs)[0]) {
+		// All current pcs are less
+		*pcs = (*pcs)[:0]
+	}
+	for _, pc := range newPCs {
+		if len(pc) == maxDepth {
+			*pcs = append(*pcs, pc)
+		}
+	}
+}
+
 func (e *Error) StackTrace() StackTrace {
-	res := make(StackTrace, len(e.stack))
-	copy(res, e.stack)
-	return res
+	var deepestStackTrace StackTrace
+	for i := range e.pcs {
+		s := e.pcs[i].toStackTrace()
+		if len(s) > len(deepestStackTrace) {
+			deepestStackTrace = s
+		}
+	}
+	return deepestStackTrace
 }
 
 func (e *Error) Is(target error) bool {
@@ -88,6 +127,6 @@ func (e *Error) Format(f fmt.State, verb rune) {
 	f.Write([]byte(e.Error()))
 	if verb == 'v' && (f.Flag('+') || f.Flag('#')) {
 		f.Write([]byte("\n"))
-		f.Write([]byte(e.stack.String()))
+		f.Write([]byte(e.StackTrace().String()))
 	}
 }
