@@ -50,6 +50,7 @@ func getProgramCounters(skip int) programCounters {
 	return pc[:n]
 }
 
+// toStackTrace converts program counters to a list of frames and filters all runtime call
 func (c programCounters) toStackTrace() StackTrace {
 	res := make([]Frame, 0, len(c))
 
