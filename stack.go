@@ -18,19 +18,22 @@ func (s StackTrace) String() string {
 	for _, frame := range s {
 		res += frame.String() + "\n"
 	}
+	// Return the stack trace without trailing \n
 	return res[:len(res)-1]
 }
 
 type Frame struct {
 	Function string
-	File    string
-	Line    int
+	File     string
+	Line     int
 }
 
 func (f Frame) String() string {
 	return f.Function + "\n\t" + f.File + ":" + strconv.Itoa(f.Line)
 }
 
+// ExtractStackTrace extracts StackTrace from the passed error. If the error
+// can't be matched with *Error, nil is returned
 func ExtractStackTrace(err error) StackTrace {
 	var e *Error
 	if errors.As(err, &e) {
@@ -66,8 +69,8 @@ func (c programCounters) toStackTrace() StackTrace {
 
 		res = append(res, Frame{
 			Function: f.Function,
-			File:    f.File,
-			Line:    f.Line,
+			File:     f.File,
+			Line:     f.Line,
 		})
 	}
 	return res

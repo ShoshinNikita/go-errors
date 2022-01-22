@@ -90,7 +90,8 @@ func TestWrapNil(t *testing.T) {
 	)
 }
 
-// TODO: comment
+// checkStackTraces checks only the function names because checking filepaths and line numbers too
+// would be too time consuming
 func checkStackTraces(t *testing.T, trace errors.StackTrace, expectedFuncs ...string) {
 	t.Helper()
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// Errors implements error interface and methods Is and As to be compatible with errors.Is and errors.As
 type Error struct {
 	errors []error
 	// pcs is a list of program counters with equal and maximum size. This state is maintained by addNewPCs
@@ -16,9 +17,9 @@ var (
 	_ fmt.Formatter = (*Error)(nil)
 )
 
-// TODO: comment
-func addOrCreate(err, new error) *Error {
-	// Skip addOrCreate and New/Errorf/Wrap/etc.
+// newError creates a new Error or reuse the existing one
+func newError(err, new error) *Error {
+	// Skip newError and New/Errorf/Wrap/etc.
 	const skip = 2
 
 	pc := getProgramCounters(skip)
